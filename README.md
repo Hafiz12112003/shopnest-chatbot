@@ -8,10 +8,6 @@ A modern, production-ready AI-powered customer support chatbot system built for 
 ![Flask](https://img.shields.io/badge/Flask-3.1-red)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
 
-## 🚀 Live Demo
-- Frontend: http://localhost:5173
-- Backend API: http://127.0.0.1:5000/api/health
-
 ## ✨ Features
 
 ### 🤖 AI Chatbot
