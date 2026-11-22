@@ -4,7 +4,9 @@ An AI support assistant for an e-commerce store. It looks up a customer's real o
 
 **Live demo:** https://shopnest-chatbot.vercel.app
 
-Click **Try the demo** on the landing page. The demo account has three sample orders (out for delivery, in transit, delivered). The backend runs on Render's free tier, so the first request after a quiet period can take up to a minute.
+> **Heads up:** This demo runs on free hosting. The server sleeps when idle, so the first login or message can take up to a minute while it wakes up. After that it responds normally. If the first attempt times out, wait a moment and try again.
+
+Click **Try the demo** on the landing page. The demo account has three sample orders (out for delivery, in transit, delivered).
 
 ## What it does
 
@@ -82,3 +84,4 @@ By default the frontend calls `http://127.0.0.1:5000/api`. For a deployed backen
 - On the free tier the backend sleeps after inactivity.
 
 Built by Muhammad Hafiz.
+
