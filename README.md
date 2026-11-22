@@ -1,241 +1,84 @@
-# 🛍️ ShopNest AI Customer Support Chatbot
+﻿# ShopNest Support
 
-A modern, production-ready AI-powered customer support chatbot system built for e-commerce platforms.
+An AI support assistant for an e-commerce store. It looks up a customer's real orders, answers policy questions from a knowledge base with sources, and says so when it doesn't know.
 
-![ShopNest](https://img.shields.io/badge/ShopNest-AI%20Chatbot-blue)
-![Python](https://img.shields.io/badge/Python-3.12-green)
-![React](https://img.shields.io/badge/React-18-blue)
-![Flask](https://img.shields.io/badge/Flask-3.1-red)
-![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
+**Live demo:** https://shopnest-chatbot.vercel.app
 
-## ✨ Features
+Click **Try the demo** on the landing page. The demo account has three sample orders (out for delivery, in transit, delivered). The backend runs on Render's free tier, so the first request after a quiet period can take up to a minute.
 
-### 🤖 AI Chatbot
-- Powered by Groq API (Llama 3.3 70B model)
-- Context-aware conversation memory
-- Human-like responses
-- Typing animation indicator
-- Auto-saves all conversations
+## What it does
 
-### 🔐 Authentication
-- JWT-based secure authentication
-- User registration and login
-- Password hashing with bcrypt
-- Protected routes
-- Role-based access (Admin/User)
+- **Order tracking.** Ask "Where is my latest order?" or give an order number. The model calls a tool, the backend looks up that user's orders, and the chat shows a tracking label with the full timeline.
+- **Answers with sources.** Policy questions are answered from the FAQ knowledge base, and each answer shows which help article it came from.
+- **Says when it doesn't know.** If nothing in the knowledge base matches, Nesta says so and offers a human agent instead of guessing.
+- **Streaming replies.** Answers appear token by token over server-sent events.
+- **Admin dashboard.** Stats, questions per day, most asked questions, most cited FAQs, knowledge-base coverage, and a list of unanswered questions with an Add as FAQ button.
 
-### 📚 FAQ Knowledge Base
-- Admin can add/edit/delete FAQs
-- AI searches FAQs before generating responses
-- Category-based organization
-- Smart keyword matching
+## How it works
 
-### 💬 Chat System
-- Real-time AI responses
-- Full conversation history
-- Multiple chat sessions
-- Delete conversations
-- Auto-titled chats
+- **Retrieval.** FAQs are ranked with BM25 (a keyword relevance algorithm written in `backend/app/services/retrieval.py`). It is lexical search, not embeddings.
+- **Tool calling.** The model (`openai/gpt-oss-120b` on Groq) has two tools, `lookup_order` and `list_my_orders`. Both receive the user id from the JWT on the server, never from the model, so a user can only see their own orders.
+- **Grounding.** The system prompt restricts answers to the stated policies, the retrieved FAQ entries and tool results.
+- **Auth.** JWT access tokens (7 day expiry) with bcrypt password hashing. Chats and messages are checked for ownership on every request.
 
-### 👨‍💼 Admin Dashboard
-- User management
-- Chat monitoring
-- FAQ management
-- Analytics overview
-- Total users, chats, messages stats
+## Tech stack
 
-### 🎨 Modern UI/UX
-- Dark theme design
-- Framer Motion animations
-- Fully responsive
-- Toast notifications
-- Clean professional layout
+- **Frontend:** React 19, Vite, Tailwind CSS, Framer Motion, Recharts, react-markdown
+- **Backend:** Flask, Flask-JWT-Extended, PyMongo, gunicorn
+- **Database:** MongoDB Atlas
+- **AI:** Groq API
+- **Hosting:** Vercel (frontend), Render (backend)
 
-## 🛠️ Tech Stack
+## Run it locally
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React.js + Vite |
-| Styling | Tailwind CSS |
-| Animations | Framer Motion |
-| Backend | Python Flask |
-| Database | MongoDB Atlas |
-| AI Model | Groq (Llama 3.3 70B) |
-| Auth | JWT + bcrypt |
-| HTTP Client | Axios |
+You need Python 3.12, Node 22, a MongoDB Atlas connection string and a Groq API key.
 
-## 📁 Project Structure
-shopnest-chatbot/
-├── backend/
-│   ├── app/
-│   │   ├── routes/
-│   │   │   ├── auth.py      # Authentication APIs
-│   │   │   ├── chat.py      # Chat APIs
-│   │   │   ├── faq.py       # FAQ APIs
-│   │   │   └── admin.py     # Admin APIs
-│   │   ├── services/
-│   │   │   └── ai_service.py  # Groq AI integration
-│   │   └── utils/
-│   │       └── database.py    # MongoDB connection
-│   ├── .env                   # Environment variables
-│   ├── requirements.txt
-│   └── run.py
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Login.jsx
-│   │   │   ├── Register.jsx
-│   │   │   ├── Chat.jsx
-│   │   │   └── Admin.jsx
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx
-│   │   └── services/
-│   │       └── api.js
-│   └── package.json
-└── README.md
+Backend, from the `backend` folder:
 
-## ⚙️ Installation & Setup
-
-### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- MongoDB Atlas account
-- Groq API key (free at console.groq.com)
-
-### Backend Setup
-
-```bash
-# Navigate to backend
-cd backend
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment (Windows)
-venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create .env file
-cp .env.example .env
-# Add your GROQ_API_KEY and MONGO_URI
-
-# Run the server
-python run.py
-```
-
-### Frontend Setup
-
-```bash
-# Navigate to frontend
-cd frontend
-
-# Install dependencies
-npm install
-
-# Run the development server
-npm run dev
-```
-
-### Environment Variables
+    python -m venv venv
+    .\venv\Scripts\activate
+    pip install -r requirements.txt
+    python run.py
 
 Create `backend/.env`:
 
-```env
-FLASK_ENV=development
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
-MONGO_URI=your-mongodb-atlas-uri
-GROQ_API_KEY=your-groq-api-key
-FRONTEND_URL=http://localhost:5173
-```
+    MONGO_URI=your_mongodb_connection_string
+    GROQ_API_KEY=your_groq_key
+    SECRET_KEY=a_long_random_string
+    JWT_SECRET_KEY=another_long_random_string
+    FRONTEND_URL=http://localhost:3000
 
-## 🔌 API Endpoints
+`GROQ_MODEL` is optional and defaults to `openai/gpt-oss-120b`.
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/auth/register | Register new user |
-| POST | /api/auth/login | Login user |
-| GET | /api/auth/me | Get current user |
+Seed the sample orders for the demo users, from the project root:
 
-### Chat
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/chat/new | Create new chat |
-| POST | /api/chat/message | Send message |
-| GET | /api/chat/history/:id | Get chat history |
-| GET | /api/chat/my-chats | Get all user chats |
-| DELETE | /api/chat/delete/:id | Delete chat |
+    python backend/seed_orders.py
 
-### FAQ
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/faq/ | Get all FAQs |
-| POST | /api/faq/ | Create FAQ (admin) |
-| DELETE | /api/faq/:id | Delete FAQ (admin) |
+Frontend, from the `frontend` folder:
 
-### Admin
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/admin/stats | Get statistics |
-| GET | /api/admin/users | Get all users |
-| GET | /api/admin/chats | Get all chats |
+    npm install
+    npm run dev
 
-## 👤 Test Accounts
+By default the frontend calls `http://127.0.0.1:5000/api`. For a deployed backend, set `VITE_API_URL` at build time.
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@shopnest.com | admin123 |
-| User | test@shopnest.com | test123 |
+## Project structure
 
-## 🤖 AI Flow
-User sends message
-↓
-Backend searches FAQ database
-↓
-Relevant FAQs found? → Inject as context
-↓
-Send to Groq AI (Llama 3.3 70B)
-↓
-AI generates human-like response
-↓
-Save to MongoDB
-↓
-Return response to frontend
+    backend/
+      app/
+        routes/      auth, chat (streaming), faq, admin
+        services/    ai_service (tool calling), retrieval (BM25), order_service
+        utils/       database
+      seed_orders.py
+    frontend/
+      src/
+        pages/       Landing, Login, Register, Chat, Admin
+        components/  OrderLabel, AuthShell
+        services/    api (including the streaming client)
 
-## 🚀 Deployment
+## Known limits
 
-### Frontend → Vercel
-```bash
-cd frontend
-npm run build
-# Deploy dist/ folder to Vercel
-```
+- The orders are seeded demo data. A real store would connect the same tools to its order system.
+- Retrieval is keyword-based, so a question phrased with none of an FAQ's words can miss it. Embedding search is the next step.
+- On the free tier the backend sleeps after inactivity.
 
-### Backend → Render
-```bash
-# Set environment variables in Render dashboard
-# Connect GitHub repository
-# Build command: pip install -r requirements.txt
-# Start command: gunicorn run:app
-```
-
-## 📝 Future Improvements
-- Real-time chat with WebSockets
-- Voice input support
-- Sentiment analysis
-- Multi-language support
-- Email notifications
-- Chat export feature
-- Mobile app
-
-## 👨‍💻 Developer
-**Muhammad Hafiz**
-- B.Tech Information Technology
-- Full Stack Developer
-- AI Integration Specialist
-
-## 📄 License
-MIT License
+Built by Muhammad Hafiz.
