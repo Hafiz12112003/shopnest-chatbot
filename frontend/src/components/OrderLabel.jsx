@@ -50,7 +50,7 @@ export default function OrderLabel({ order, sample = false, compact = false, not
         </div>
 
         <p className="font-mono text-[13px] text-graphite mt-4 tabular">{order.id}</p>
-        <p className="font-display font-extrabold text-2xl leading-tight mt-1 max-w-[15ch]">{order.eta}</p>
+        <p className="font-display font-extrabold text-2xl leading-tight mt-1 max-w-[22ch]">{order.eta}</p>
 
         <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
           <div>
@@ -115,7 +115,7 @@ export default function OrderLabel({ order, sample = false, compact = false, not
       </div>
 
       <div
-        className={`absolute top-14 right-4 stamp-in border-2 font-display font-extrabold text-[11px] px-2 py-0.5 uppercase leading-none bg-slip/80 ${
+        className={`absolute top-[44px] right-4 stamp-in border-2 font-display font-extrabold text-[11px] px-2 py-0.5 uppercase leading-none bg-slip/80 ${
           delivered ? 'border-route text-route' : 'border-alert text-alert'
         }`}
         style={{ animationDelay: stampDelay }}
@@ -125,3 +125,4 @@ export default function OrderLabel({ order, sample = false, compact = false, not
     </div>
   )
 }
+
