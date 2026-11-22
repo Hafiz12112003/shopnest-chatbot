@@ -1,6 +1,6 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 
-const API_BASE = 'http://127.0.0.1:5000/api'
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api'
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -14,15 +14,20 @@ api.interceptors.request.use((config) => {
     config.headers['Authorization'] = `Bearer ${token}`
   }
   return config
-}, (error) => {
-  return Promise.reject(error)
-})
+}, (error) => Promise.reject(error))
 
-// Log responses for debugging
-api.interceptors.response.use((response) => {
-  return response
-}, (error) => {
-  console.error('API Error:', error.response?.status, error.response?.data)
+// Log out cleanly when a token has expired or is invalid
+api.interceptors.response.use((response) => response, (error) => {
+  const status = error.response?.status
+  const url = error.config?.url || ''
+  const isAuthCall = url.includes('/auth/login') || url.includes('/auth/register')
+
+  if ((status === 401 || status === 422) && !isAuthCall && localStorage.getItem('token')) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.href = '/login'
+  }
+  console.error('API Error:', status, error.response?.data)
   return Promise.reject(error)
 })
 
@@ -43,5 +48,52 @@ export const deleteFaq = (id) => api.delete(`/faq/${id}`)
 export const getAdminStats = () => api.get('/admin/stats')
 export const getAdminUsers = () => api.get('/admin/users')
 export const getAdminChats = () => api.get('/admin/chats')
+
+// Streaming chat: reads server-sent events and calls back as they arrive
+export async function streamMessage({ message, chatId, onSources, onToken, onDone, onError }) {
+  try {
+    const res = await fetch(`${API_BASE}/chat/message/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ message, chat_id: chatId })
+    })
+
+    if (!res.ok || !res.body) {
+      let msg = 'Failed to get response'
+      try { msg = (await res.json()).error || msg } catch { /* ignore */ }
+      onError?.(msg)
+      return
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+
+      const events = buffer.split('\n\n')
+      buffer = events.pop()
+
+      for (const raw of events) {
+        const line = raw.trim()
+        if (!line.startsWith('data:')) continue
+        const event = JSON.parse(line.slice(5).trim())
+        if (event.type === 'sources') onSources?.(event.sources)
+        else if (event.type === 'token') onToken?.(event.text)
+        else if (event.type === 'done') onDone?.()
+        else if (event.type === 'error') onError?.(event.message)
+      }
+    }
+  } catch (err) {
+    console.error('Stream error:', err)
+    onError?.('Connection lost. Please try again.')
+  }
+}
 
 export default api
