@@ -1,32 +1,27 @@
-/** @type {import('tailwindcss').Config} */
+﻿/** @type {import('tailwindcss').Config} */
 export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a5f',
-        },
-        dark: {
-          100: '#1e1e2e',
-          200: '#181825',
-          300: '#11111b',
-        }
+        concrete: '#E4E7EA',
+        slip: '#FFFFFF',
+        ink: '#16181D',
+        graphite: '#5B616B',
+        line: '#CBD0D6',
+        signal: '#FFC83D',
+        route: '#17803F',
+        alert: '#D8432F',
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+        sans: ['"Instrument Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
     },
   },
   plugins: [],
 }
-

@@ -50,7 +50,7 @@ export const getAdminUsers = () => api.get('/admin/users')
 export const getAdminChats = () => api.get('/admin/chats')
 
 // Streaming chat: reads server-sent events and calls back as they arrive
-export async function streamMessage({ message, chatId, onSources, onToken, onDone, onError }) {
+export async function streamMessage({ message, chatId, onSources, onOrder, onToken, onDone, onError }) {
   try {
     const res = await fetch(`${API_BASE}/chat/message/stream`, {
       method: 'POST',
@@ -85,6 +85,7 @@ export async function streamMessage({ message, chatId, onSources, onToken, onDon
         if (!line.startsWith('data:')) continue
         const event = JSON.parse(line.slice(5).trim())
         if (event.type === 'sources') onSources?.(event.sources)
+        else if (event.type === 'order') onOrder?.(event.order)
         else if (event.type === 'token') onToken?.(event.text)
         else if (event.type === 'done') onDone?.()
         else if (event.type === 'error') onError?.(event.message)

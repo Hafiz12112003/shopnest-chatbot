@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify, Response, stream_with_context
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.utils.database import chats_collection, messages_collection, faqs_collection, users_collection
-from app.services.ai_service import get_ai_response, stream_ai_response
+from app.services.ai_service import get_ai_response, stream_agent
 from app.services.retrieval import retrieve
 
 chat_bp = Blueprint('chat', __name__)
@@ -45,14 +45,14 @@ def get_history_for_ai(chat_id):
     ).sort('created_at', 1).limit(10))
 
 
-def save_exchange(chat, chat_id, user_message, ai_response, sources):
+def save_exchange(chat, chat_id, user_message, ai_response, sources, orders=None):
     now = datetime.utcnow()
     messages_collection.insert_one({
         'chat_id': chat_id, 'role': 'user', 'content': user_message, 'created_at': now
     })
     messages_collection.insert_one({
         'chat_id': chat_id, 'role': 'assistant', 'content': ai_response,
-        'sources': sources, 'created_at': datetime.utcnow()
+        'sources': sources, 'orders': orders or [], 'created_at': datetime.utcnow()
     })
 
     update = {'$inc': {'message_count': 2}, '$set': {'updated_at': datetime.utcnow()}}
@@ -136,21 +136,31 @@ def send_message_stream():
     def generate():
         yield sse({'type': 'sources', 'sources': sources})
         parts = []
+        orders = []
         try:
-            for token in stream_ai_response(user_message, history, context):
-                parts.append(token)
-                yield sse({'type': 'token', 'text': token})
+            for event in stream_agent(user_message, history, context, user_id):
+                if event['type'] == 'token':
+                    parts.append(event['text'])
+                    yield sse(event)
+                elif event['type'] == 'order':
+                    if not orders:
+                        # An order answer replaces the help-article chip
+                        yield sse({'type': 'sources', 'sources': []})
+                    orders.append(event['order'])
+                    yield sse(event)
         except Exception as e:
             print('AI stream error:', e)
             yield sse({'type': 'error', 'message': 'The AI service is unavailable right now. Please try again.'})
             return
 
         full = ''.join(parts).strip()
+        if not full and orders:
+            full = "Here's what I found."
         if not full:
             yield sse({'type': 'error', 'message': 'The AI returned an empty reply. Please try again.'})
             return
 
-        save_exchange(chat, chat_id, user_message, full, sources)
+        save_exchange(chat, chat_id, user_message, full, [] if orders else sources, orders)
         yield sse({'type': 'done'})
 
     return Response(
