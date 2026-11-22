@@ -16,3 +16,6 @@ frontend/dist/
 # OS / editor
 .DS_Store
 .vscode/
+
+backend/generate_docs.py
+backend/set_admin_password.py
